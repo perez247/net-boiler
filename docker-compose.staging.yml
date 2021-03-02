@@ -1,0 +1,65 @@
+version: "3.4"
+
+# For stagging
+# For testing a application online on a development server
+services:
+
+  postgres_image:
+    image: postgres:13-alpine
+    ports:
+      - 5432:5432
+    # Start the container with a eco_db, and password as the root users password
+    environment: 
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
+  docker_frontend_api:
+    image: newecopeoplev1/web_app_dev
+    ports:
+      - "4200:4200"
+
+  docker_backend_api:
+    image: newecopeoplev1/backend_api_dev
+    environment:
+      # - DefaultConnection=Server=postgres_image;Database=ecodb;uid=root;pwd=password
+      - DefaultConnection=${DefaultConnection}
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - AUTHORIZATION_TOKEN=${AUTHORIZATION_TOKEN}
+      - HOSTNAME=${HOSTNAME}
+      - EMAIL_SERVER=${EMAIL_SERVER}
+    depends_on:
+      - postgres_image
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data/infrastructure/data:/app/Infrastructure/data/
+
+  nginx:
+    image: nginx:1.15-alpine
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./data/nginx/conf:/etc/nginx/conf.d
+      - ./data/nginx/certbot/conf:/etc/letsencrypt
+      - ./data/nginx/certbot/www:/var/www/certbot
+
+  certbot:
+    image: certbot/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    volumes:
+      - ./data/nginx/certbot/conf:/etc/letsencrypt
+      - ./data/nginx/certbot/www:/var/www/certbot
+    
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30 
+

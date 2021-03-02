@@ -1,0 +1,25 @@
+FROM node as builder
+
+# set working directory
+WORKDIR /app
+
+# add `/app/node_modules/.bin` to $PATH
+ENV PATH /app/node_modules/.bin:$PATH
+
+# Copy source code
+COPY ./notification_service/ ./
+
+# Install dependencies
+RUN npm install
+
+# Run build
+RUN npm run build
+
+# set your port
+ENV PORT 8880
+
+# expose the port to outside world
+EXPOSE  8880
+
+# start command as per package.json
+CMD ["npm", "start"]

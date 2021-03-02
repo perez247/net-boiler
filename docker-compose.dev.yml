@@ -1,0 +1,73 @@
+version: "3.5"
+
+# For development
+# For full stack developers
+
+services:
+
+  postgres_image:
+    image: postgres:13-alpine
+    ports:
+      - 5432:5432
+    # Start the container with a eco_db, and password as the root users password
+    environment: 
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+
+  docker_proxy_server:
+    restart: always
+    build:
+      dockerfile: Dockerfile.nginx.dev
+      context: ./
+    ports:
+      - "80:80"
+
+  net_api:
+    # restart: always
+    build:
+      context: ./
+      dockerfile: Dockerfile.net.dev
+    volumes:
+      - ./netcore:/app
+      - /app/Api/bin/
+      - /app/Application/bin/
+      - /app/Domain/bin/
+      - /app/Infrastructure/bin/
+      - ./netcore/Infrastructure/data:/app/Infrastructure/data/
+      # - /app/Infrastructure/data/
+      - /app/Persistence/bin/
+      - /app/Api/obj/
+      - /app/Application/obj/
+      - /app/Domain/obj/
+      - /app/Infrastructure/obj/
+      - /app/Persistence/obj/
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      # - ./log/emailmessage.txt:/app/emailmessage.txt
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # - DefaultConnection=Server=postgres_image;Database=ecodb;uid=root;pwd=password;
+      - DefaultConnection=${DefaultConnection}
+      - AUTHORIZATION_TOKEN=ThisismenttobetheAuthorizationtoken
+      - HOSTNAME=${HOSTNAME}
+      - SOCKET=eco_notification_service
+    ports:
+      - "5000:5000"
+    depends_on: 
+      - postgres_image
+
+  notification_service:
+    # restart: always
+    build:
+      context: ./
+      dockerfile: Dockerfile.not.service
+    volumes:
+      - ./notification_service/src:/app/src
+      - /app/dist/
+    ports:
+      - "8880:8880"    
+    environment:
+      - SECRET=Thisismenttobethesecret
+      - Port=8880
+    
