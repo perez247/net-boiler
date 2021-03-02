@@ -34,11 +34,11 @@ COPY --from=build-env /app/Api/out .
 COPY --from=build-env /app/Api/botdetect.xml ./
 
 # Copy json file for seeding 
-RUN mkdir -p ../Persistence/data/
+# RUN mkdir -p ../Persistence/data/
 RUN mkdir -p ../Infrastructure/data/
 RUN mkdir -p ../Infrastructure/Implementation/Email/Templates/
 
-COPY --from=build-env /app/Persistence/data ../Persistence/data
+# COPY --from=build-env /app/Persistence/data ../Persistence/data
 COPY --from=build-env /app/Infrastructure/Implementation/Email/Templates ../Infrastructure/Implementation/Email/Templates
 
 # RUN date --set = date -d "1 hour"  ..
